@@ -49,26 +49,46 @@ events_db = {}
 # Enhanced GET all events with filters
 @event_router.get("/", response_model=List[Event], tags=["event"])
 async def get_all_events(
-    created_by: Optional[str] = None, 
-    after_date: Optional[int] = None,
+    created_by: Optional[str] = None,
+    from_date: Optional[int] = None,  # Using UNIX timestamp for dates
+    to_date: Optional[int] = None,
     tags: Optional[List[str]] = Query(None),
     min_views: Optional[int] = None,
-    name: Optional[str] = None
-):
-    """Retrieve all events, with optional filters."""
+    name: Optional[str] = None,
+    event_id: Optional[str] = None
+) -> List[Event]:
+    """
+    Retrieve events based on various filters. This function supports filtering by creator,
+    date range, tags, minimum views, name, and specific event ID.
+    
+    Parameters:
+    - created_by (str, optional): Filter events created by a specific user.
+    - from_date (int, optional): Filter events after this date (UNIX timestamp).
+    - to_date (int, optional): Filter events before this date (UNIX timestamp).
+    - tags (List[str], optional): Filter events that include any of the specified tags.
+    - min_views (int, optional): Filter events that have at least a certain number of views.
+    - name (str, optional): Filter events whose names contain the given substring.
+    - event_id (str, optional): Retrieve a specific event by its unique ID.
+    
+    Returns:
+    List[Event]: A list of events that match the filters.
+    """
     events = list(events_db.values())
+    if event_id:
+        return [event for event in events if event.id == event_id]
     if created_by:
-        events = [event for event in events if event.created_by == created_by]
-    if after_date:
-        events = [event for event in events if event.date >= after_date]
+        events = [event for event in events if event.CreatedBy == created_by]
+    if from_date:
+        events = [event for event in events if event.date >= from_date]
+    if to_date:
+        events = [event for event in events if event.date <= to_date]
     if tags:
-        events = [event for event in events if any(tag in event.tags for tag in tags)]
+        events = [event for event in events if set(tags).intersection(event.Tags)]
     if min_views:
         events = [event for event in events if event.views >= min_views]
     if name:
         events = [event for event in events if name.lower() in event.name.lower()]
     return events
-
 
 @event_router.post("/", response_model=Event, tags=["event"])
 async def create_event(event: Event):
@@ -92,24 +112,3 @@ async def delete_event(event_id: str):
         raise HTTPException(status_code=404, detail="Event not found")
     del events_db[event_id]
     return {"message": "Event deleted successfully"}
-
-@event_router.get("/review/{event_id}", response_model=Event, tags=["event"])
-async def check_event_review_status(event_id: str):
-    """Check the review status of an event."""
-    event = events_db.get(event_id)
-    if not event:
-        raise HTTPException(status_code=404, detail="Event not found")
-    return event
-
-
-# Purchase additional packages
-@event_router.post("/purchase-package/{event_id}", response_model=Event, tags=["event"])
-async def purchase_feature_package(event_id: str, package: Package):
-    """Add a feature package to an event."""
-    event = events_db.get(event_id)
-    if not event:
-        raise HTTPException(status_code=404, detail="Event not found")
-    if event.status != EventStatus.APPROVED:
-        raise HTTPException(status_code=400, detail="Only approved events can purchase additional packages")
-    event.packages.append(package)
-    return event

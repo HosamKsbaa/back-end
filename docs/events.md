@@ -76,3 +76,116 @@ sequenceDiagram
 2. **Rendering the Diagram**: Once pasted, the Mermaid code will render a sequence diagram that visually represents the interaction between the user, the frontend, the backend, and the payment gateway during the event management process.
 
 This sequence diagram and the updated API ensure that the flow of creating an event, handling payments, submitting for review, and purchasing additional packages after acceptance is clear and structured. It facilitates a smooth user experience by outlining the necessary steps and backend interactions required for a successful event lifecycle management.
+
+# FastAPI Documentation Version 0.1.0
+
+## Paths
+
+### `/auth/login`
+- **Method**: POST
+- **Tags**: Authentication
+- **Summary**: Login
+- **Request Body** (required): `AuthRequest`
+- **Responses**:
+  - `200`: Successful Response
+  - `422`: Validation Error (`HTTPValidationError`)
+
+### `/auth/verify`
+- **Method**: POST
+- **Tags**: Authentication
+- **Summary**: Verify
+- **Request Body** (required): `VerifyRequest`
+- **Responses**:
+  - `200`: Successful Response
+  - `422`: Validation Error (`HTTPValidationError`)
+
+### `/notifications/notification-titles`
+- **Method**: GET
+- **Tags**: notifications
+- **Summary**: Get Notification Titles
+- **Description**: Retrieve a list of notifications titles with their current status and support pagination.
+  - **Parameters**:
+    - `page` (int, optional): The page number to retrieve. Defaults to 1.
+    - `per_page` (int, optional): The number of notifications per page. Defaults to 10.
+  - **Responses**:
+    - `200`: Successful Response
+    - `422`: Validation Error (`HTTPValidationError`)
+
+### `/notifications/notification-details/{notification_id}`
+- **Method**: GET
+- **Tags**: notifications
+- **Summary**: Get Notification Details
+- **Description**: Retrieve all details for a specific notification by its ID.
+  - **Parameters**:
+    - `notification_id` (int, required)
+  - **Responses**:
+    - `200`: Successful Response
+    - `422`: Validation Error (`HTTPValidationError`)
+
+### `/events/`
+- **Method**: GET
+- **Tags**: event
+- **Summary**: Get All Events
+- **Description**: Retrieve events based on various filters including creator, date range, tags, minimum views, name, and specific event ID.
+  - **Parameters**:
+    - `created_by` (str, optional)
+    - `from_date` (int, optional)
+    - `to_date` (int, optional)
+    - `tags` (List[str], optional)
+    - `min_views` (int, optional)
+    - `name` (str, optional)
+    - `event_id` (str, optional)
+  - **Responses**:
+    - `200`: Successful Response
+    - `422`: Validation Error (`HTTPValidationError`)
+
+### `/events/{event_id}`
+- **Methods**: PUT, DELETE
+- **Tags**: event
+- **Summary**: Update or Delete Event
+- **Description**: Update or delete an event by its ID.
+  - **Parameters**:
+    - `event_id` (str, required)
+  - **Responses** (PUT/DELETE):
+    - `200`: Successful Response
+    - `422`: Validation Error (`HTTPValidationError`)
+
+## Components Schemas
+
+### `AuthRequest`
+- **Properties**:
+  - `phone_number`: string
+- **Required**: `phone_number`
+
+### `VerifyRequest`
+- **Properties**:
+  - `phone_number`: string
+  - `verification_code`: string
+- **Required**: `phone_number`, `verification_code`
+
+### `Notification`
+- **Properties**:
+  - `user_id`: string
+  - `title`: string
+  - `body`: string
+  - `method`: string
+  - `seen`: boolean (default: false)
+  - `status`: `NotificationStatus` (default: "notsent")
+- **Required**: `user_id`, `title`, `body`, `method`
+
+### `Event-Input` and `Event-Output`
+- **Properties**:
+  - `id`: string or null
+  - `name`: string
+  - `date`: integer
+  - `views`: integer
+  - `status`: `Status`
+  - `packages`: array of `Package`
+  - `payment`: `Payment`
+  - `CreatedBy`: string
+  - `Tags`: array of strings
+- **Required**: `id`, `name`, `date`, `views`, `status`, `packages`, `payment`, `CreatedBy`, `Tags`
+
+
+
+
