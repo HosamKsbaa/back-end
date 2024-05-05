@@ -1,0 +1,56 @@
+from fastapi import FastAPI, HTTPException, Path, Body, Query, status
+from typing import List, Optional
+from pydantic import BaseModel, Field, EmailStr
+import uvicorn
+from auth_router import auth_router
+from notification_router import notification_router
+from event_router import *
+
+app = FastAPI()
+
+
+# Database Simulation
+users_db = {}
+events_db = {}
+notifications_db = []
+
+
+
+app.include_router(auth_router, prefix="/auth")
+app.include_router(notification_router, prefix="/notifications")
+app.include_router(event_router, prefix="/events")
+
+
+
+
+
+
+
+
+class MainPageData(BaseModel):
+    new_notifications_count: int
+    featured_events: List[Event]
+    
+# Simulate notification count retrieval
+def get_new_notifications_count():
+    # Placeholder logic for counting new notifications
+    return len([n for n in notifications_db if n['seen'] == False])
+# Simulate featured events retrieval
+def get_featured_events():
+    # Assuming 'featured' is a status in your event data
+    return [event for event in events_db.values() if event.status == 'featured']
+
+@event_router.get("/main-page", response_model=MainPageData,tags=["Pages"])
+async def get_main_page_data():
+    featured_events = get_featured_events()
+    new_notifications_count = get_new_notifications_count()
+    return MainPageData(new_notifications_count=new_notifications_count, featured_events=featured_events)
+
+
+
+def main():
+    # Run the API with uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000, log_level="info")
+
+if __name__ == "__main__":
+    main()
