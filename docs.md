@@ -46,7 +46,6 @@ sequenceDiagram
    - **فشل التحقق**: إذا كان الكود غير صحيح، يرسل النظام الخلفي رد فعل بالخطأ إلى الواجهة الأمامية، التي بدورها تعرض رسالة خطأ للمستخدم وتطلب منه إعادة المحاولة.
 
 
-Here's the API documentation for the Authentication endpoints translated into Arabic:
 
 
 ### وصف تفاعلات نظام الإشعارات
