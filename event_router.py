@@ -1,22 +1,33 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel, Field
 from typing import List, Optional, Dict
 from enum import Enum
 
 # Enum for event status
-class EventStatus(Enum):
-    PENDING = "pending"
+class Status(Enum):
+    waitingForPayment = "waitingForPayment"
+    waitingForReview = "waitingForReview"
     APPROVED = "approved"
     REJECTED = "rejected"
-    PAID = "paid"
-    UNDER_REVIEW = "under_review"
+
 
 # API Router
 event_router = APIRouter()
 
+
+class Payment(BaseModel):
+    payment_id: str
+    payment_status: str
+    payment_amount: float
+    payment_method: str
+    payment_date: int
+
 # Package model with dynamic details
 class Package(BaseModel):
+    id : Optional[str]
     name: str
+    status: Status 
+    payment : Payment
     price: float
     details: Dict[str, str]  # Dynamic details as key-value pairs
 
@@ -26,8 +37,9 @@ class Event(BaseModel):
     name: str
     date: int
     views: int
-    status: EventStatus = EventStatus.PENDING
+    status: Status 
     packages: List[Package]
+    payment : Payment
     CreatedBy : str
     Tags : List[str]
 
@@ -57,13 +69,6 @@ async def get_all_events(
         events = [event for event in events if name.lower() in event.name.lower()]
     return events
 
-@event_router.get("/{event_id}", response_model=Event, tags=["event"])
-async def get_specific_event(event_id: str):
-    """Retrieve specific event details by ID."""
-    event = events_db.get(event_id)
-    if not event:
-        raise HTTPException(status_code=404, detail="Event not found")
-    return event
 
 @event_router.post("/", response_model=Event, tags=["event"])
 async def create_event(event: Event):
@@ -95,26 +100,7 @@ async def check_event_review_status(event_id: str):
     if not event:
         raise HTTPException(status_code=404, detail="Event not found")
     return event
-# Submit for review
-@event_router.post("/submit-for-review/{event_id}", response_model=dict, tags=["event"])
-async def submit_event_for_review(event_id: str):
-    """Submit an event for review."""
-    event = events_db.get(event_id)
-    if not event:
-        raise HTTPException(status_code=404, detail="Event not found")
-    if event.status != EventStatus.PAID:
-        raise HTTPException(status_code=400, detail="Event must be paid before review")
-    event.status = EventStatus.UNDER_REVIEW
-    return {"message": "Event submitted for review"}
 
-# Check payment status
-@event_router.get("/check-payment/{event_id}", response_model=dict, tags=["event"])
-async def check_payment_status(event_id: str):
-    """Check payment status of an event."""
-    event = events_db.get(event_id)
-    if not event:
-        raise HTTPException(status_code=404, detail="Event not found")
-    return {"status": event.status.value}
 
 # Purchase additional packages
 @event_router.post("/purchase-package/{event_id}", response_model=Event, tags=["event"])
